@@ -1,0 +1,212 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SentinelGate — GitHub Actions CI Pipeline
+# Runs on every PR and push to main.
+#
+# Pipeline stages:
+#   1. lint        — ruff, mypy, eslint, prettier
+#   2. unit-tests  — pytest unit tests (SQLite in-memory, fake Redis)
+#   3. integration — pytest integration tests (PostgreSQL + Redis services)
+#   4. build       — Docker image build validation
+# ─────────────────────────────────────────────────────────────────────────────
+name: SentinelGate CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+
+jobs:
+
+  # ── Job 1: Backend Lint ────────────────────────────────────────────────────
+  lint-backend:
+    name: "Backend Lint (ruff + mypy)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dev dependencies
+        run: uv pip install --system -e ".[dev]"
+
+      - name: Run ruff (lint)
+        run: ruff check backend/
+
+      - name: Run ruff (format check)
+        run: ruff format --check backend/
+
+      - name: Run mypy (type check)
+        run: mypy backend/ --ignore-missing-imports
+        continue-on-error: false
+
+
+  # ── Job 2: Frontend Lint ───────────────────────────────────────────────────
+  lint-frontend:
+    name: "Frontend Lint (eslint + prettier)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Run ESLint
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Run Prettier (check)
+        run: npm run format:check
+        working-directory: frontend
+
+
+  # ── Job 3: Backend Unit Tests ──────────────────────────────────────────────
+  unit-tests:
+    name: "Unit Tests"
+    runs-on: ubuntu-latest
+    needs: lint-backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv pip install --system -e ".[dev]"
+
+      - name: Run unit tests
+        env:
+          APP_ENV: test
+          SECRET_KEY: ${{ secrets.CI_SECRET_KEY || 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }}
+          DATABASE_URL: "sqlite+aiosqlite:///:memory:"
+          REDIS_URL: "redis://localhost:6379/15"
+        run: |
+          pytest backend/tests/unit/ \
+            --cov=backend \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            -v
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false
+
+
+  # ── Job 4: Integration Tests ───────────────────────────────────────────────
+  integration-tests:
+    name: "Integration Tests"
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: sentinelgate_test
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: sentinelgate_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv pip install --system -e ".[dev]"
+
+      - name: Run Alembic migrations
+        env:
+          DATABASE_URL: "postgresql+asyncpg://sentinelgate_test:test_password@localhost:5432/sentinelgate_test"
+        run: alembic upgrade head
+
+      - name: Run integration tests
+        env:
+          APP_ENV: test
+          SECRET_KEY: ${{ secrets.CI_SECRET_KEY || 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }}
+          DATABASE_URL: "postgresql+asyncpg://sentinelgate_test:test_password@localhost:5432/sentinelgate_test"
+          REDIS_URL: "redis://localhost:6379/15"
+        run: |
+          pytest backend/tests/integration/ \
+            --cov=backend \
+            --cov-report=term-missing \
+            -v
+
+
+  # ── Job 5: Docker Build Validation ────────────────────────────────────────
+  docker-build:
+    name: "Docker Build"
+    runs-on: ubuntu-latest
+    needs: [unit-tests, lint-frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/backend.Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/frontend.Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://localhost/api
+            NEXT_PUBLIC_WS_URL=wss://localhost/ws

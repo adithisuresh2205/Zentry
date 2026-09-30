@@ -1,0 +1,154 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #080B10;
+    --bg-surface: #10151C;
+    --border-color: #202832;
+    --text-primary: #F3F4F6;
+    --text-muted: #9CA3AF;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: #080B10;
+    color: #F3F4F6;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    letter-spacing: -0.01em;
+    overflow-x: hidden;
+    transform: translateZ(0);
+  }
+}
+
+/* ──────────────── Optimized Tactical Background ──────────────── */
+.bg-grid-tactical {
+  background-color: #080B10;
+  background-image: 
+    radial-gradient(rgba(59, 130, 246, 0.08) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(8, 11, 16, 0.9) 0%, rgba(8, 11, 16, 1) 100%);
+  background-size: 24px 24px, 100% 100%;
+  background-attachment: fixed;
+}
+
+/* ──────────────── Hardware-Accelerated Tactical Glassmorphism ──────────────── */
+.glass-panel {
+  background: linear-gradient(135deg, rgba(16, 21, 28, 0.78) 0%, rgba(11, 15, 20, 0.88) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+    0 8px 24px -4px rgba(0, 0, 0, 0.4);
+  transform: translateZ(0);
+  position: relative;
+}
+
+.glass-panel-interactive {
+  background: linear-gradient(135deg, rgba(16, 21, 28, 0.78) 0%, rgba(11, 15, 20, 0.88) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+    0 6px 18px -3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transform: translateZ(0);
+  position: relative;
+}
+
+.glass-panel-interactive:hover {
+  background: linear-gradient(135deg, rgba(20, 27, 36, 0.88) 0%, rgba(14, 19, 26, 0.94) 100%);
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+    0 10px 28px -4px rgba(0, 0, 0, 0.5),
+    0 0 15px -2px rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px) translateZ(0);
+}
+
+.glass-header {
+  background: linear-gradient(180deg, rgba(16, 21, 28, 0.9) 0%, rgba(11, 15, 20, 0.85) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+  transform: translateZ(0);
+}
+
+/* ──────────────── Tactical HUD Crosshairs & Corner Accents ──────────────── */
+.tactical-corner {
+  position: relative;
+}
+.tactical-corner::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 6px;
+  height: 6px;
+  border-top: 1.5px solid rgba(59, 130, 246, 0.6);
+  border-left: 1.5px solid rgba(59, 130, 246, 0.6);
+  pointer-events: none;
+}
+.tactical-corner::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 6px;
+  height: 6px;
+  border-bottom: 1.5px solid rgba(59, 130, 246, 0.6);
+  border-right: 1.5px solid rgba(59, 130, 246, 0.6);
+  pointer-events: none;
+}
+
+/* ──────────────── Status Glow Badges ──────────────── */
+.glow-emerald {
+  box-shadow: 0 0 10px -1px rgba(16, 185, 129, 0.3);
+}
+.glow-red {
+  box-shadow: 0 0 10px -1px rgba(239, 68, 68, 0.3);
+}
+.glow-amber {
+  box-shadow: 0 0 10px -1px rgba(245, 158, 11, 0.3);
+}
+.glow-blue {
+  box-shadow: 0 0 10px -1px rgba(59, 130, 246, 0.3);
+}
+.glow-cyan {
+  box-shadow: 0 0 10px -1px rgba(56, 189, 248, 0.3);
+}
+
+/* ──────────────── Swiss Grid Accents & Typography ──────────────── */
+.swiss-grid-border {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.font-mono-tech {
+  font-family: "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ──────────────── Smooth Tactical Scrollbar ──────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080B10;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #202832;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3B82F6;
+}

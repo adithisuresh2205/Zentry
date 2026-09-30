@@ -1,0 +1,71 @@
+# ─────────────────────────────────────────────────────────
+# SentinelGate — .gitignore
+# ─────────────────────────────────────────────────────────
+
+# ── Secrets & environment ──────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+
+# ── Python ────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+*.pot
+*.pyc
+
+# ── uv ────────────────────────────────────────────────────
+uv.lock
+
+# ── Node / Next.js ────────────────────────────────────────
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.turbo/
+frontend/.vercel/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ── Docker ────────────────────────────────────────────────
+docker/ssl/
+
+# ── Alembic ───────────────────────────────────────────────
+backend/alembic/versions/*.pyc
+
+# ── OS artifacts ──────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ── IDE ───────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace

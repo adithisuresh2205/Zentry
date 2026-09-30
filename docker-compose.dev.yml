@@ -1,0 +1,56 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SentinelGate — Docker Compose Override (Development)
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Development differences:
+#   - Hot reload for backend (uvicorn --reload)
+#   - Source code mounted as volume (no rebuild needed on change)
+#   - DB port exposed to host (for pgAdmin / DBeaver)
+#   - Redis port exposed to host (for redis-cli debugging)
+#   - Nginx uses dev cert (self-signed)
+#   - OpenAPI docs enabled
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: sentinelgate
+
+services:
+
+  db:
+    ports:
+      - "5433:5432"   # Exposed to host for DB GUI tools (non-standard port avoids conflicts)
+
+  redis:
+    ports:
+      - "6380:6379"   # Exposed to host for debugging
+
+  gateway:
+    build:
+      target: builder   # Use builder stage (includes dev deps)
+    environment:
+      APP_ENV: development
+      DEBUG: "true"
+      LOG_LEVEL: DEBUG
+    volumes:
+      - ./backend:/app/backend:rw          # Hot reload: mount source
+      - ./alembic.ini:/app/alembic.ini:ro
+    command: >
+      sh -c "
+        alembic upgrade head &&
+        uvicorn backend.main:app
+          --host 0.0.0.0
+          --port 8000
+          --reload
+          --reload-dir /app/backend
+          --log-level debug
+      "
+
+  frontend:
+    build:
+      target: deps   # Use deps stage only
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./frontend:/app:rw                 # Hot reload: mount source
+      - /app/node_modules                  # Anonymous volume preserves node_modules
+      - /app/.next                         # Anonymous volume preserves Next.js cache
+    command: npm run dev
